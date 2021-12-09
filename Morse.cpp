@@ -137,7 +137,7 @@ void handle_chars(void)
 void handle_units(uint8_t c)
 {
 	// set led on and space off
-	if (!next_index && !handle_unit && !unit_handled) {
+	if (!next_index && !handle_unit && !unit_handled && tx_gpio_send) {
 		if (c == 1) {
 			handle_unit_millis = W_SP * unit_t +
 			    (gpio_tx_current_millis - gpio_tx_start_millis);
@@ -159,7 +159,7 @@ void handle_units(uint8_t c)
 	}
 
 	// set led off, handle IC_SP, or handle C_SP
-	if (handle_unit && !unit_handled && !next_index &&
+	if (handle_unit && !unit_handled && !next_index && tx_gpio_send &&
 	    (millis() - gpio_tx_start_millis) >= handle_unit_millis) {
 		gpio_tx_start_millis = gpio_tx_current_millis;
 		digitalWrite(tx_pin, LOW);
@@ -176,7 +176,7 @@ void handle_units(uint8_t c)
 	}
 
 	// we're done, start next
-	if (unit_handled &&
+	if (unit_handled && tx_gpio_send &&
 	    (millis() - gpio_tx_start_millis) >= handle_unit_millis) {
 		gpio_tx_start_millis = gpio_tx_current_millis;
 		unit_handled = 0;
