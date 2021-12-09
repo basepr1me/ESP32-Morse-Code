@@ -36,7 +36,8 @@ String			 tx_str;
 uint8_t			 this_index = 0, next_index = 0;
 uint8_t			 handle_unit, unit_handled, bit;
 
-unsigned long		 tx_start_millis, tx_current_millis, handle_unit_millis;
+unsigned long		 tx_start_millis, gpio_tx_current_millis;
+unsigned long		 handle_unit_millis;
 
 uint8_t			 ctob(uint8_t c);
 void			 stop(void);
@@ -101,15 +102,15 @@ void Morse::tx_gpio(String tx)
 	next_index = 1;
 
 	tx_start_millis = millis();
-	tx_current_millis = millis();
+	gpio_tx_current_millis = millis();
 	handle_unit_millis = millis();
 }
 
 void handle_chars(void)
 {
-	tx_current_millis = millis();
+	gpio_tx_current_millis = millis();
 	if (next_index) {
-		tx_start_millis = tx_current_millis;
+		tx_start_millis = gpio_tx_current_millis;
 		next_index = 0;
 		handle_unit = 0;
 		unit_handled = 0;
@@ -129,35 +130,35 @@ void handle_units(uint8_t c)
 	if (!next_index && !handle_unit && !unit_handled) {
 		if (c == 1) {
 			handle_unit_millis = W_SP * unit_t +
-			    (tx_current_millis - tx_start_millis);
+			    (gpio_tx_current_millis - tx_start_millis);
 		} else {
 			if (bitRead(c, bit)) {
 				handle_unit_millis = DAH * unit_t +
-				    (tx_current_millis - tx_start_millis);
+				    (gpio_tx_current_millis - tx_start_millis);
 				digitalWrite(tx_pin, HIGH);
 			} else {
 				handle_unit_millis = DIT * unit_t +
-				    (tx_current_millis - tx_start_millis);
+				    (gpio_tx_current_millis - tx_start_millis);
 				digitalWrite(tx_pin, HIGH);
 			}
 		}
 		handle_unit = 1;
-		tx_start_millis = tx_current_millis;
+		tx_start_millis = gpio_tx_current_millis;
 	}
 
 	// set led off, handle IC_SP, or handle C_SP
 	if (handle_unit && !unit_handled && !next_index &&
 	    (millis() - tx_start_millis) >= handle_unit_millis) {
-		tx_start_millis = tx_current_millis;
+		tx_start_millis = gpio_tx_current_millis;
 		digitalWrite(tx_pin, LOW);
 		bit++;
 
 		if (c >> (bit + 1))
 			handle_unit_millis = IC_SP * unit_t +
-			    (tx_current_millis - tx_start_millis);
+			    (gpio_tx_current_millis - tx_start_millis);
 		else {
 			handle_unit_millis = C_SP * unit_t +
-			    (tx_current_millis - tx_start_millis);
+			    (gpio_tx_current_millis - tx_start_millis);
 		}
 		unit_handled = 1;
 	}
@@ -165,7 +166,7 @@ void handle_units(uint8_t c)
 	// we're done, start next
 	if (unit_handled &&
 	    (millis() - tx_start_millis) >= handle_unit_millis) {
-		tx_start_millis = tx_current_millis;
+		tx_start_millis = gpio_tx_current_millis;
 		unit_handled = 0;
 		handle_unit = 0;
 
