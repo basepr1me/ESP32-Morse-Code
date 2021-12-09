@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Tracey Emery
+ * Copyright (c) 2021, 2022 Tracey Emery K7TLE
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
