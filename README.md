@@ -1,7 +1,7 @@
 # Morse
 Arduino Morse Code Library
 
-To transmit code, setup the class with words per minute and the tx pin. To toggle digraph transmission, enter a backtick '`' before and after your morse, for example: String code = "Hello `AR`";
+To transmit code, setup the class with words per minute and the tx pin. To toggle digraph transmission, enter a backtick before and after your morse.
 
 # WIP
 This is in a WIP state and currently only transmits Morse code to a gpio pin ... (that's all I need for now)
