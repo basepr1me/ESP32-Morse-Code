@@ -10,7 +10,9 @@ void		 loop(void);
 
 Morse		 morse(WPM, LEDP);
 
-String		 tx = "k7su de k7tle k ~";
+// backticks will toggle digraph sending
+
+String		 tx = "k7su de k7tle k `ar`";
 
 void
 setup(void)
