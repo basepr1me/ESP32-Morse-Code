@@ -199,6 +199,7 @@ void handle_units(uint8_t c)
 
 void stop(void)
 {
+	digraph = 0;
 	tx_gpio_send = 0;
 	this_index = 0;
 	next_index = 0;
