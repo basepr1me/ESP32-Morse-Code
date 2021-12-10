@@ -19,23 +19,32 @@
 
 #include "Arduino.h"
 
-class Morse
+class
+Morse
 {
 	// we've no rx code yet
 	public:
-		Morse(uint8_t the_wpm, uint8_t the_tx_pin);
-		Morse(uint8_t the_wpm, uint8_t the_tx_pin, uint8_t the_rx_pin);
+		Morse(uint8_t type, uint8_t the_pin);
+		Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm);
 
-		uint8_t transmitting(void);
-		void tx_gpio(String tx);
-		void tx_stop(void);
+		uint8_t gpio_transmitting(void);
+		void gpio_tx(String tx);
+		void gpio_tx_stop(void);
+		void gpio_watchdog(void);
 
-		void watchdog(void);
+		uint8_t dac_transmitting(void);
+		void dac_tx(String tx);
+		void dac_tx_stop(void);
+		void dac_watchdog(void);
 
-	private:
-		void init(uint8_t the_wpm, uint8_t the_tx_pin,
-		    uint8_t the_rx_pin);
+	// private:
 };
 
+enum
+{
+	M_GPIO,
+	M_DAC,
+	M_ADC
+};
 
 #endif // _MORSE_H

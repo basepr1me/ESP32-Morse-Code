@@ -16,6 +16,7 @@
 
 
 #include "Morse.h"
+#include "sign_wav.h"
 
 #define DIT		 1.0
 #define DAH		 3.0
@@ -23,189 +24,407 @@
 #define C_SP		 3.0
 #define W_SP		 7.0
 
-volatile uint8_t	 wpm;
-volatile uint8_t	 tx_pin;
-volatile uint8_t	 rx_pin;
-volatile float		 unit_t;
+#define D_WPM		 15
 
-// tx
-volatile uint8_t	 tx_gpio_send = 0;
-uint8_t			 tx_len, tx_enc;
-String			 tx_str;
+#define UNIT_T(x)	 (60.0 / (50.0 * (float)x)) * 1000.0
 
-uint8_t			 this_index = 0, next_index = 0, digraph = 0;
-uint8_t			 handle_unit, unit_handled, bit;
+volatile uint8_t	 gpio_wpm, dac_wpm;
+
+volatile uint8_t	 gpio_tx_pin, dac_tx_pin;
+volatile uint8_t	 adc_rx_pin;
+
+volatile float		 gpio_unit_t, dac_unit_t;
+
+volatile uint8_t	 gpio_tx_sending = 0, dac_tx_sending = 0;
+uint8_t			 gpio_tx_len, gpio_tx_enc, dac_tx_len, dac_tx_enc;
+
+String			 gpio_tx_str, dac_tx_str;
+
+uint8_t			 gpio_this_index = 0, gpio_next_index = 0;
+uint8_t			 gpio_handle_unit, gpio_unit_handled, gpio_bit;
+uint8_t			 gpio_digraph = 0, gpio_inited = 0;
+
+uint8_t			 dac_this_index = 0, dac_next_index = 0, dac_i = 0;
+uint8_t			 dac_handle_unit, dac_unit_handled, dac_bit;
+uint8_t			 dac_digraph = 0, dac_inited = 0, dac_on = 1;
+
+uint8_t			 adc_inited;
 
 unsigned long		 gpio_tx_start_millis, gpio_tx_current_millis;
-unsigned long		 handle_unit_millis;
+unsigned long		 gpio_handle_unit_millis;
+
+unsigned long		 dac_tx_start_millis, dac_tx_current_millis;
+unsigned long		 dac_handle_unit_millis;
 
 uint8_t			 ctob(uint8_t c);
-void			 stop(void);
-void			 handle_chars(void);
-void			 handle_units(uint8_t c);
 
-Morse::Morse(uint8_t the_wpm, uint8_t the_tx_pin)
+void			 gpio_stop(void);
+void			 gpio_handle_chars(void);
+void			 gpio_handle_units(uint8_t c);
+
+void			 dac_stop(void);
+void			 dac_handle_chars(void);
+void			 dac_handle_units(uint8_t c);
+void			 dac_write(const char*);
+
+Morse::Morse(uint8_t type, uint8_t the_pin)
 {
-	init(the_wpm, the_tx_pin, 0);
+	if (type != M_ADC)
+		Morse(type, the_pin, D_WPM);
+	else
+		Morse(type, the_pin, 0);
 }
 
-Morse::Morse(uint8_t the_wpm, uint8_t the_tx_pin, uint8_t the_rx_pin)
+Morse::Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm)
 {
-	init(the_wpm, the_tx_pin, the_rx_pin);
-
+	switch(type) {
+	case M_GPIO:
+		if (!gpio_inited) {
+			gpio_wpm = the_wpm;
+			gpio_tx_pin = the_pin;
+			gpio_unit_t = UNIT_T(gpio_wpm);
+			gpio_inited = 1;
+		}
+		break;
+	case M_DAC:
+		if (!dac_inited) {
+			dac_wpm = the_wpm;
+			dac_tx_pin = the_pin;
+			dac_unit_t = UNIT_T(dac_wpm);
+			dac_inited = 1;
+		}
+		break;
+	case M_ADC:
+		if (!adc_inited) {
+			adc_rx_pin = the_pin;
+			adc_inited = 1;
+		}
+		break;
+	default:
+		exit(1);
+		break;
+	}
 }
 
-uint8_t Morse::transmitting(void)
+// gpio functions
+
+uint8_t
+Morse::gpio_transmitting(void)
 {
-	if (tx_gpio_send)
+	if (gpio_tx_sending)
 		return 1;
 
 	return 0;
 }
 
-void Morse::init(uint8_t the_wpm, uint8_t the_tx_pin, uint8_t the_rx_pin)
+void
+Morse::gpio_tx_stop(void)
 {
-	wpm = the_wpm;
-	tx_pin = the_tx_pin;
-	rx_pin = the_rx_pin;
-
-	// calculate our unit time
-	unit_t = (60.0 / (50.0 * (float)wpm)) * 1000.0;
+	gpio_stop();
 }
 
-void Morse::tx_stop(void)
+void
+Morse::gpio_watchdog(void)
 {
-	stop();
+	if (gpio_inited)
+		gpio_handle_chars();
 }
 
-void Morse::watchdog(void)
+void
+Morse::gpio_tx(String tx)
 {
-	handle_chars();
-}
-
-void Morse::tx_gpio(String tx)
-{
-	// if we are sending, this is our loop runner for handling chars
-	if (tx_gpio_send)
+	// if we are sending, return
+	if (gpio_tx_sending)
 		return;
 
 	// start by setting our tx pin low
-	digitalWrite(tx_pin, LOW);
+	digitalWrite(gpio_tx_pin, LOW);
 
 	// gather our starting variables
-	tx_gpio_send = 1;
-	tx_len = tx.length();
+	gpio_tx_sending = 1;
+	gpio_tx_len = tx.length();
 	tx.toUpperCase();
-	tx_str = tx;
+	gpio_tx_str = tx;
 
-	this_index = 0;
-	next_index = 1;
+	gpio_this_index = 0;
+	gpio_next_index = 1;
 
 	gpio_tx_start_millis = millis();
 	gpio_tx_current_millis = millis();
-	handle_unit_millis = millis();
+	gpio_handle_unit_millis = millis();
 }
 
-void handle_chars(void)
+void
+gpio_handle_chars(void)
 {
 	gpio_tx_current_millis = millis();
-	if (next_index) {
-		if (this_index == tx_len) {
-			stop();
+	if (gpio_next_index) {
+		if (gpio_this_index == gpio_tx_len) {
+			gpio_stop();
 			return;
 		}
 		gpio_tx_start_millis = gpio_tx_current_millis;
-		next_index = 0;
-		handle_unit = 0;
-		unit_handled = 0;
-		if (tx_str[this_index] == 126) {
-			this_index++;
-			next_index = 1;
-		} else if (tx_str[this_index] == 96) {
-			digraph = !digraph;
-			this_index++;
-			next_index = 1;
+		gpio_next_index = 0;
+		gpio_handle_unit = 0;
+		gpio_unit_handled = 0;
+		if (gpio_tx_str[gpio_this_index] == 126) {
+			gpio_this_index++;
+			gpio_next_index = 1;
+		} else if (gpio_tx_str[gpio_this_index] == 96) {
+			gpio_digraph = !gpio_digraph;
+			gpio_this_index++;
+			gpio_next_index = 1;
 		} else {
-			tx_enc = ctob(tx_str[this_index]);
-			handle_units(tx_enc);
-			bit = 0;
+			gpio_tx_enc = ctob(gpio_tx_str[gpio_this_index]);
+			gpio_handle_units(gpio_tx_enc);
+			gpio_bit = 0;
 		}
-	} else if (tx_gpio_send)
-		handle_units(tx_enc);
+	} else if (gpio_tx_sending)
+		gpio_handle_units(gpio_tx_enc);
 }
 
-void handle_units(uint8_t c)
+void
+gpio_handle_units(uint8_t c)
 {
 	// set led on and space off
-	if (!next_index && !handle_unit && !unit_handled && tx_gpio_send) {
+	if (!gpio_next_index && !gpio_handle_unit && !gpio_unit_handled &&
+	    gpio_tx_sending) {
 		if (c == 1) {
-			handle_unit_millis = W_SP * unit_t +
+			gpio_handle_unit_millis = W_SP * gpio_unit_t +
 			    (gpio_tx_current_millis - gpio_tx_start_millis);
 		} else {
-			if (bitRead(c, bit)) {
-				handle_unit_millis = DAH * unit_t +
+			if (bitRead(c, gpio_bit)) {
+				gpio_handle_unit_millis = DAH * gpio_unit_t +
 				    (gpio_tx_current_millis -
 				     gpio_tx_start_millis);
-				digitalWrite(tx_pin, HIGH);
+				digitalWrite(gpio_tx_pin, HIGH);
 			} else {
-				handle_unit_millis = DIT * unit_t +
+				gpio_handle_unit_millis = DIT * gpio_unit_t +
 				    (gpio_tx_current_millis -
 				     gpio_tx_start_millis);
-				digitalWrite(tx_pin, HIGH);
+				digitalWrite(gpio_tx_pin, HIGH);
 			}
 		}
-		handle_unit = 1;
+		gpio_handle_unit = 1;
 		gpio_tx_start_millis = gpio_tx_current_millis;
 	}
 
 	// set led off, handle IC_SP, or handle C_SP
-	if (handle_unit && !unit_handled && !next_index && tx_gpio_send &&
-	    (millis() - gpio_tx_start_millis) >= handle_unit_millis) {
+	if (gpio_handle_unit && !gpio_unit_handled && !gpio_next_index &&
+	    gpio_tx_sending &&
+	    (millis() - gpio_tx_start_millis) >= gpio_handle_unit_millis) {
 		gpio_tx_start_millis = gpio_tx_current_millis;
-		digitalWrite(tx_pin, LOW);
-		bit++;
+		digitalWrite(gpio_tx_pin, LOW);
+		gpio_bit++;
 
-		if (c >> (bit + 1) || digraph)
-			handle_unit_millis = IC_SP * unit_t +
+		if (c >> (gpio_bit + 1) || gpio_digraph)
+			gpio_handle_unit_millis = IC_SP * gpio_unit_t +
 			    (gpio_tx_current_millis - gpio_tx_start_millis);
 		else
-			handle_unit_millis = C_SP * unit_t +
+			gpio_handle_unit_millis = C_SP * gpio_unit_t +
 			    (gpio_tx_current_millis - gpio_tx_start_millis);
 
-		unit_handled = 1;
+		gpio_unit_handled = 1;
 	}
 
 	// we're done, start next
-	if (unit_handled && tx_gpio_send &&
-	    (millis() - gpio_tx_start_millis) >= handle_unit_millis) {
+	if (gpio_unit_handled && gpio_tx_sending &&
+	    (millis() - gpio_tx_start_millis) >= gpio_handle_unit_millis) {
 		gpio_tx_start_millis = gpio_tx_current_millis;
-		unit_handled = 0;
-		handle_unit = 0;
+		gpio_unit_handled = 0;
+		gpio_handle_unit = 0;
 
 		// hit the end of that byte
-		if (!(c >> (bit + 1))) {
-			bit = 0;
-			next_index = 1;
-			this_index++;
+		if (!(c >> (gpio_bit + 1))) {
+			gpio_bit = 0;
+			gpio_next_index = 1;
+			gpio_this_index++;
 		}
 
 		// hit the end of the tx
-		if (this_index == tx_len) {
-			stop();
+		if (gpio_this_index == gpio_tx_len) {
+			gpio_stop();
 			return;
 		}
 	}
 }
 
-void stop(void)
+void
+gpio_stop(void)
 {
-	digraph = 0;
-	tx_gpio_send = 0;
-	this_index = 0;
-	next_index = 0;
+	gpio_digraph = 0;
+	gpio_tx_sending = 0;
+	gpio_this_index = 0;
+	gpio_next_index = 0;
 }
 
-uint8_t ctob(uint8_t c)
+// dac functions
+
+void
+dac_write(const char *tx)
+{
+	dacWrite(dac_tx_pin, sine_wav[dac_i]);
+}
+
+uint8_t
+Morse::dac_transmitting(void)
+{
+	if (dac_tx_sending)
+		return 1;
+
+	return 0;
+}
+
+void
+Morse::dac_tx_stop(void)
+{
+	dac_stop();
+}
+
+void
+Morse::dac_watchdog(void)
+{
+	if (dac_inited) {
+		/* dac_handle_chars(); */
+		if (dac_on) {
+			dac_i++;
+			if (dac_i >= strlen(sine_wav))
+				dac_i = 0;
+			dac_write(sine_wav);
+		}
+	}
+}
+
+void
+Morse::dac_tx(String tx)
+{
+	// if we are sending, return
+	if (dac_tx_sending)
+		return;
+
+	// start by setting our tx pin low
+	digitalWrite(dac_tx_pin, LOW);
+
+	// gather our starting variables
+	dac_tx_sending = 1;
+	dac_tx_len = tx.length();
+	tx.toUpperCase();
+	dac_tx_str = tx;
+
+	dac_this_index = 0;
+	dac_next_index = 1;
+
+	dac_tx_start_millis = millis();
+	dac_tx_current_millis = millis();
+	dac_handle_unit_millis = millis();
+}
+
+void
+dac_handle_chars(void)
+{
+	dac_tx_current_millis = millis();
+	if (dac_next_index) {
+		if (dac_this_index == dac_tx_len) {
+			dac_stop();
+			return;
+		}
+		dac_tx_start_millis = dac_tx_current_millis;
+		dac_next_index = 0;
+		dac_handle_unit = 0;
+		dac_unit_handled = 0;
+		if (dac_tx_str[dac_this_index] == 126) {
+			dac_this_index++;
+			dac_next_index = 1;
+		} else if (dac_tx_str[dac_this_index] == 96) {
+			dac_digraph = !dac_digraph;
+			dac_this_index++;
+			dac_next_index = 1;
+		} else {
+			dac_tx_enc = ctob(dac_tx_str[dac_this_index]);
+			dac_handle_units(dac_tx_enc);
+			dac_bit = 0;
+		}
+	} else if (dac_tx_sending)
+		dac_handle_units(dac_tx_enc);
+}
+
+void
+dac_handle_units(uint8_t c)
+{
+	// set led on and space off
+	if (!dac_next_index && !dac_handle_unit && !dac_unit_handled &&
+	    dac_tx_sending) {
+		if (c == 1) {
+			dac_handle_unit_millis = W_SP * dac_unit_t +
+			    (dac_tx_current_millis - dac_tx_start_millis);
+		} else {
+			if (bitRead(c, dac_bit)) {
+				dac_handle_unit_millis = DAH * dac_unit_t +
+				    (dac_tx_current_millis -
+				     dac_tx_start_millis);
+				digitalWrite(dac_tx_pin, HIGH);
+			} else {
+				dac_handle_unit_millis = DIT * dac_unit_t +
+				    (dac_tx_current_millis -
+				     dac_tx_start_millis);
+				digitalWrite(dac_tx_pin, HIGH);
+			}
+		}
+		dac_handle_unit = 1;
+		dac_tx_start_millis = dac_tx_current_millis;
+	}
+
+	// set led off, handle IC_SP, or handle C_SP
+	if (dac_handle_unit && !dac_unit_handled && !dac_next_index &&
+	    dac_tx_sending &&
+	    (millis() - dac_tx_start_millis) >= dac_handle_unit_millis) {
+		dac_tx_start_millis = dac_tx_current_millis;
+		digitalWrite(dac_tx_pin, LOW);
+		dac_bit++;
+
+		if (c >> (dac_bit + 1) || dac_digraph)
+			dac_handle_unit_millis = IC_SP * dac_unit_t +
+			    (dac_tx_current_millis - dac_tx_start_millis);
+		else
+			dac_handle_unit_millis = C_SP * dac_unit_t +
+			    (dac_tx_current_millis - dac_tx_start_millis);
+
+		dac_unit_handled = 1;
+	}
+
+	// we're done, start next
+	if (dac_unit_handled && dac_tx_sending &&
+	    (millis() - dac_tx_start_millis) >= dac_handle_unit_millis) {
+		dac_tx_start_millis = dac_tx_current_millis;
+		dac_unit_handled = 0;
+		dac_handle_unit = 0;
+
+		// hit the end of that byte
+		if (!(c >> (dac_bit + 1))) {
+			dac_bit = 0;
+			dac_next_index = 1;
+			dac_this_index++;
+		}
+
+		// hit the end of the tx
+		if (dac_this_index == dac_tx_len) {
+			dac_stop();
+			return;
+		}
+	}
+}
+
+void
+dac_stop(void)
+{
+	dac_digraph = 0;
+	dac_tx_sending = 0;
+	dac_this_index = 0;
+	dac_next_index = 0;
+}
+
+uint8_t
+ctob(uint8_t c)
 {
 	switch(c) {
 	case 32:	return 0b1;			// ' '
