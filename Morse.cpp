@@ -16,7 +16,6 @@
 
 
 #include "Morse.h"
-#include "sign_wav.h"
 
 #define DIT		 1.0
 #define DAH		 3.0
