@@ -46,7 +46,7 @@ uint8_t			 gpio_digraph = 0, gpio_inited = 0;
 
 uint8_t			 dac_this_index = 0, dac_next_index = 0;
 uint8_t			 dac_handle_unit, dac_unit_handled, dac_bit;
-uint8_t			 dac_digraph = 0, dac_inited = 0, dac_on = 1;
+uint8_t			 dac_digraph = 0, dac_inited = 0, dac_on = 0;
 
 uint8_t			 adc_inited;
 
@@ -280,6 +280,7 @@ void
 Morse::dac_watchdog(void)
 {
 	if (dac_inited) {
+		dac_handle_chars();
 		if (dac_on) {
 			dac_i += .125;
 			if (dac_i >= dac_max)
@@ -363,6 +364,7 @@ dac_handle_units(uint8_t c)
 				     dac_tx_start_millis);
 				digitalWrite(dac_tx_pin, HIGH);
 			}
+			dac_on = 1;
 		}
 		dac_handle_unit = 1;
 		dac_tx_start_millis = dac_tx_current_millis;
@@ -383,6 +385,7 @@ dac_handle_units(uint8_t c)
 			dac_handle_unit_millis = C_SP * dac_unit_t +
 			    (dac_tx_current_millis - dac_tx_start_millis);
 
+		dac_on = 0;
 		dac_unit_handled = 1;
 	}
 
