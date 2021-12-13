@@ -24,6 +24,8 @@ Morse
 {
 	// we've no rx code yet
 	public:
+		float dac_volume = 100;
+
 		Morse(uint8_t type, uint8_t the_pin);
 		Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm);
 

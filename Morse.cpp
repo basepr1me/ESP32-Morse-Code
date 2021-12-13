@@ -25,8 +25,9 @@
 
 #define D_WPM		 15
 
+#define MAX_RAD		 127.5
+
 #define UNIT_T(x)	 (60.0 / (50.0 * (float)x)) * 1000.0
-#define SINE_W(x)	 (sin(x) * 127.5 + 127.5)
 
 volatile uint8_t	 gpio_wpm, dac_wpm;
 
@@ -50,7 +51,7 @@ uint8_t			 dac_digraph = 0, dac_inited = 0, dac_on = 0;
 
 uint8_t			 adc_inited;
 
-float			 dac_i = 0.0, dac_max = 6.283;
+float			 dac_i = 0.0, dac_max = 6.283, volume;
 
 unsigned long		 gpio_tx_start_millis, gpio_tx_current_millis;
 unsigned long		 gpio_handle_unit_millis;
@@ -282,10 +283,11 @@ Morse::dac_watchdog(void)
 	if (dac_inited) {
 		dac_handle_chars();
 		if (dac_on) {
-			dac_i += .125;
+			dac_i += .02;
 			if (dac_i >= dac_max)
 				dac_i = 0.0;
-			dacWrite(dac_tx_pin, SINE_W(dac_i));
+			volume = (MAX_RAD * (dac_volume / 100.0));
+			dacWrite(dac_tx_pin, sin(dac_i) * volume + volume);
 		}
 	}
 }
