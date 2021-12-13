@@ -27,6 +27,7 @@
 #define D_WPM		 15
 
 #define UNIT_T(x)	 (60.0 / (50.0 * (float)x)) * 1000.0
+#define SINE_W(x)	 (sin(x) * 127.5 + 127.5)
 
 volatile uint8_t	 gpio_wpm, dac_wpm;
 
@@ -44,11 +45,13 @@ uint8_t			 gpio_this_index = 0, gpio_next_index = 0;
 uint8_t			 gpio_handle_unit, gpio_unit_handled, gpio_bit;
 uint8_t			 gpio_digraph = 0, gpio_inited = 0;
 
-uint8_t			 dac_this_index = 0, dac_next_index = 0, dac_i = 0;
+uint8_t			 dac_this_index = 0, dac_next_index = 0;
 uint8_t			 dac_handle_unit, dac_unit_handled, dac_bit;
 uint8_t			 dac_digraph = 0, dac_inited = 0, dac_on = 1;
 
 uint8_t			 adc_inited;
+
+float			 dac_i = 0.0, dac_max = 6.283;
 
 unsigned long		 gpio_tx_start_millis, gpio_tx_current_millis;
 unsigned long		 gpio_handle_unit_millis;
@@ -65,7 +68,6 @@ void			 gpio_handle_units(uint8_t c);
 void			 dac_stop(void);
 void			 dac_handle_chars(void);
 void			 dac_handle_units(uint8_t c);
-void			 dac_write(const char*);
 
 Morse::Morse(uint8_t type, uint8_t the_pin)
 {
@@ -260,12 +262,6 @@ gpio_stop(void)
 
 // dac functions
 
-void
-dac_write(const char *tx)
-{
-	dacWrite(dac_tx_pin, sine_wav[dac_i]);
-}
-
 uint8_t
 Morse::dac_transmitting(void)
 {
@@ -285,12 +281,11 @@ void
 Morse::dac_watchdog(void)
 {
 	if (dac_inited) {
-		/* dac_handle_chars(); */
 		if (dac_on) {
-			dac_i++;
-			if (dac_i >= strlen(sine_wav))
-				dac_i = 0;
-			dac_write(sine_wav);
+			dac_i += .125;
+			if (dac_i >= dac_max)
+				dac_i = 0.0;
+			dacWrite(dac_tx_pin, SINE_W(dac_i));
 		}
 	}
 }
