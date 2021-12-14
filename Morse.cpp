@@ -283,10 +283,10 @@ Morse::dac_watchdog(void)
 	if (dac_inited) {
 		dac_handle_chars();
 		if (dac_on) {
-			dac_i +=  dac_max / (clk_freq / (dac_freq * 1000));
+			dac_i +=  dac_max / (clk_freq / (dac_freq * 3600));
 			if (dac_i >= dac_max)
 				dac_i = 0.0;
-			volume = (MAX_RAD * (dac_volume / 100.0));
+			volume = (MAX_RAD * (dac_volume / 1000.0));
 			dacWrite(dac_tx_pin, sin(dac_i) * volume + volume);
 		}
 	}
