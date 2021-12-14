@@ -283,7 +283,7 @@ Morse::dac_watchdog(void)
 	if (dac_inited) {
 		dac_handle_chars();
 		if (dac_on) {
-			dac_i += .02;
+			dac_i +=  dac_max / (clk_freq / (dac_freq * 1000));
 			if (dac_i >= dac_max)
 				dac_i = 0.0;
 			volume = (MAX_RAD * (dac_volume / 100.0));
