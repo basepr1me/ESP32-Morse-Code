@@ -51,7 +51,7 @@ uint8_t			 dac_digraph = 0, dac_inited = 0, dac_on = 0;
 
 uint8_t			 adc_inited;
 
-float			 dac_i = 0.0, dac_max = 6.283, volume;
+float			 dac_i = 0.0, dac_max = 6.283;
 
 unsigned long		 gpio_tx_start_millis, gpio_tx_current_millis;
 unsigned long		 gpio_handle_unit_millis;
@@ -283,11 +283,10 @@ Morse::dac_watchdog(void)
 	if (dac_inited) {
 		dac_handle_chars();
 		if (dac_on) {
-			dac_i +=  dac_max / 50; // ~ 660Hz
+			dac_i +=  dac_max / 30;
 			if (dac_i >= dac_max)
 				dac_i = 0.0;
-			volume = (MAX_RAD * (dac_volume / 1000.0));
-			dacWrite(dac_tx_pin, sin(dac_i) * volume + volume);
+			dacWrite(dac_tx_pin, sin(dac_i) * MAX_RAD + MAX_RAD);
 		}
 	}
 }
