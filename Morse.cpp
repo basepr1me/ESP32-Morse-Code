@@ -495,7 +495,7 @@ ctob(uint8_t c)
 
 	case 58:	return 0b1000111;		// ':'
 	case 59:	return 0b1010101;		// ';'
-	case 61:	return 0b110001;		// '=' ' BT'
+	case 61:	return 0b110001;		// '=' 'BT'
 	case 63:	return 0b1001100;		// '?'
 	case 64:	return 0b1010110;		// '@'
 
