@@ -51,6 +51,11 @@ information.
 Note
 ----
 
+Only two DAC pins are available on the ESP32. These pins are:
+
+		DAC_CHANNEL_1: 25
+		DAC_CHANNEL_2: 26
+
 I don't pretend to know anything about writing Arduino libraries. This style is
 OpenBSD style and may not look right in the Arduino IDE, since I don't use it.
 
