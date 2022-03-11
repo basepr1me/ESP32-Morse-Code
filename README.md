@@ -48,8 +48,8 @@ Example
 See the [LED_DAC Example](examples/LED_DAC/LED_DAC.ino) file for more
 information.
 
-Note
-----
+Notes
+-----
 
 Only two DAC pins are available on the ESP32. These pins are:
 
