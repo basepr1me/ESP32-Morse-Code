@@ -17,27 +17,34 @@
 #ifndef _MORSE_H
 #define _MORSE_H
 
+#include "soc/rtc_io_reg.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/sens_reg.h"
+#include "soc/rtc.h"
+
+#include "driver/dac.h"
+
 #include "Arduino.h"
 
 class
 Morse
 {
-	// we've no rx code yet
 	public:
 		Morse(uint8_t type, uint8_t the_pin);
 		Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm);
 
 		uint8_t gpio_transmitting(void);
+
 		void gpio_tx(String tx);
 		void gpio_tx_stop(void);
 		void gpio_watchdog(void);
 
 		uint8_t dac_transmitting(void);
+
 		void dac_tx(String tx);
 		void dac_tx_stop(void);
 		void dac_watchdog(void);
-
-	// private:
+		void dac_cw_configure(dac_cw_config_t *);
 };
 
 enum

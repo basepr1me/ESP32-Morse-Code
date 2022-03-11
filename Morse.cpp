@@ -14,7 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-
 #include "Morse.h"
 
 #define DIT		 1.0
@@ -49,9 +48,7 @@ uint8_t			 dac_this_index = 0, dac_next_index = 0;
 uint8_t			 dac_handle_unit, dac_unit_handled, dac_bit;
 uint8_t			 dac_digraph = 0, dac_inited = 0, dac_on = 0;
 
-uint8_t			 adc_inited;
-
-float			 dac_i = 0.0, dac_max = 6.283;
+uint8_t			 adc_inited, dac_cw_configured = 0;
 
 unsigned long		 gpio_tx_start_millis, gpio_tx_current_millis;
 unsigned long		 gpio_handle_unit_millis;
@@ -61,6 +58,8 @@ unsigned long		 dac_handle_unit_millis;
 
 uint8_t			 ctob(uint8_t c);
 
+dac_channel_t		 dac_channel;
+
 void			 gpio_stop(void);
 void			 gpio_handle_chars(void);
 void			 gpio_handle_units(uint8_t c);
@@ -68,6 +67,10 @@ void			 gpio_handle_units(uint8_t c);
 void			 dac_stop(void);
 void			 dac_handle_chars(void);
 void			 dac_handle_units(uint8_t c);
+
+void			 dac_cw_auto_configure(dac_channel_t);
+void			 dac_cw_start(void);
+void			 dac_cw_stop(void);
 
 Morse::Morse(uint8_t type, uint8_t the_pin)
 {
@@ -91,8 +94,19 @@ Morse::Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm)
 	case M_DAC:
 		if (!dac_inited) {
 			dac_wpm = the_wpm;
-			dac_tx_pin = the_pin;
+			switch (the_pin) {
+			case 1:
+				dac_channel = DAC_CHANNEL_1;
+				break;
+			case 2:
+				dac_channel = DAC_CHANNEL_2;
+				break;
+			default:
+				break;
+			}
 			dac_unit_t = UNIT_T(dac_wpm);
+			dac_cw_auto_configure(dac_channel);
+			dac_output_enable(dac_channel);
 			dac_inited = 1;
 		}
 		break;
@@ -282,12 +296,10 @@ Morse::dac_watchdog(void)
 {
 	if (dac_inited) {
 		dac_handle_chars();
-		if (dac_on) {
-			dac_i +=  dac_max / 30;
-			if (dac_i >= dac_max)
-				dac_i = 0.0;
-			dacWrite(dac_tx_pin, sin(dac_i) * MAX_RAD + MAX_RAD);
-		}
+		if (dac_on)
+			dac_cw_start();
+		else
+			dac_cw_stop();
 	}
 }
 
@@ -299,7 +311,16 @@ Morse::dac_tx(String tx)
 		return;
 
 	// start by setting our tx pin low
-	digitalWrite(dac_tx_pin, LOW);
+	switch(dac_tx_pin) {
+	case 1:
+		digitalWrite(25, LOW);
+		break;
+	case 2:
+		digitalWrite(26, LOW);
+		break;
+	default:
+		break;
+	}
 
 	// gather our starting variables
 	dac_tx_sending = 1;
@@ -313,6 +334,13 @@ Morse::dac_tx(String tx)
 	dac_tx_start_millis = millis();
 	dac_tx_current_millis = millis();
 	dac_handle_unit_millis = millis();
+}
+
+void
+Morse::dac_cw_configure(dac_cw_config_t *dac_cw_config)
+{
+	dac_cw_generator_config(dac_cw_config);
+	dac_cw_configured = 1;
 }
 
 void
@@ -419,6 +447,31 @@ dac_stop(void)
 	dac_tx_sending = 0;
 	dac_this_index = 0;
 	dac_next_index = 0;
+}
+
+void
+dac_cw_auto_configure(dac_channel_t channel)
+{
+	if (!dac_cw_configured) {
+		dac_cw_config_t dac_cw_config;
+
+		dac_cw_config.en_ch = channel;
+	 	dac_cw_config.freq = 1000;
+
+		dac_cw_generator_config(&dac_cw_config);
+	}
+}
+
+void
+dac_cw_start(void)
+{
+	dac_cw_generator_enable();
+}
+
+void
+dac_cw_stop(void)
+{
+	dac_cw_generator_disable();
 }
 
 uint8_t
