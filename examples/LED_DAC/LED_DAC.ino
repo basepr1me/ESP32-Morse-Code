@@ -2,7 +2,7 @@
 
 #define	WPM		 17
 #define LEDP		 2
-#define GSECS		 2000 // seconds between transmittions
+#define GSECS		 2000 // seconds between transmissions
 #define DSECS		 4000
 
 unsigned long	 current_gpio_millis, start_gpio_millis;
