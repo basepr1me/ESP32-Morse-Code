@@ -389,7 +389,7 @@ dac_handle_units(uint8_t c)
 		dac_tx_start_millis = dac_tx_current_millis;
 	}
 
-	// set led off, handle IC_SP, or handle C_SP
+	// set dac off, handle IC_SP, or handle C_SP
 	if (dac_handle_unit && !dac_unit_handled && !dac_next_index &&
 	    dac_tx_sending &&
 	    (millis() - dac_tx_start_millis) >= dac_handle_unit_millis) {
