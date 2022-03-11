@@ -8,6 +8,10 @@ pin or send audio Morse Code via the on-board DAC.
 Usage
 -----
 
+Clone the library to your project:
+
+		git clone https://github.com/basepr1me/ESP32-Morse-Code.git libraries/Morse
+
 Two class instantiation methods are in place:
 
 		Morse(TYPE, PIN/DAC_CHANNEL);
