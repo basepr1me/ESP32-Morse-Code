@@ -4,7 +4,6 @@
 #define LEDP		 2
 #define GSECS		 2000 // seconds between transmittions
 #define DSECS		 4000
-#define DAC_CHANNEL	 2
 
 unsigned long	 current_gpio_millis, start_gpio_millis;
 unsigned long	 current_dac_millis, start_dac_millis;
@@ -13,7 +12,7 @@ void		 loop(void);
 
 
 Morse		 morse(M_GPIO, LEDP); // WPM is auto selected
-Morse		 morse_dac(M_DAC, DAC_CHANNEL, WPM); // use DAC channel 2
+Morse		 morse_dac(M_DAC, DAC_CHANNEL_2, WPM); // use DAC channel 2
 
 // backticks will toggle digraph sending
 
@@ -27,7 +26,7 @@ setup(void)
 	pinMode(LEDP, OUTPUT);
 	digitalWrite(LEDP, LOW);
 
-	// configure our DAC if we want to
+	// configure our DAC if we want to (this is the prefered method)
 	dac_cw_config_t dac_cw_config;
 
 	dac_cw_config.en_ch = DAC_CHANNEL_2;

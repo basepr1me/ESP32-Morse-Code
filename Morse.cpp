@@ -31,7 +31,6 @@
 volatile uint8_t	 gpio_wpm, dac_wpm;
 
 volatile uint8_t	 gpio_tx_pin, dac_tx_pin;
-volatile uint8_t	 adc_rx_pin;
 
 volatile float		 gpio_unit_t, dac_unit_t;
 
@@ -48,7 +47,7 @@ uint8_t			 dac_this_index = 0, dac_next_index = 0;
 uint8_t			 dac_handle_unit, dac_unit_handled, dac_bit;
 uint8_t			 dac_digraph = 0, dac_inited = 0, dac_on = 0;
 
-uint8_t			 adc_inited, dac_cw_configured = 0;
+uint8_t			 dac_cw_configured = 0;
 
 unsigned long		 gpio_tx_start_millis, gpio_tx_current_millis;
 unsigned long		 gpio_handle_unit_millis;
@@ -74,10 +73,7 @@ void			 dac_cw_stop(void);
 
 Morse::Morse(uint8_t type, uint8_t the_pin)
 {
-	if (type != M_ADC)
 		Morse(type, the_pin, D_WPM);
-	else
-		Morse(type, the_pin, 0);
 }
 
 Morse::Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm)
@@ -108,12 +104,6 @@ Morse::Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm)
 			dac_cw_auto_configure(dac_channel);
 			dac_output_enable(dac_channel);
 			dac_inited = 1;
-		}
-		break;
-	case M_ADC:
-		if (!adc_inited) {
-			adc_rx_pin = the_pin;
-			adc_inited = 1;
 		}
 		break;
 	default:
