@@ -29,7 +29,9 @@ setup(void)
 	// configure our DAC if we want to (this is the prefered method)
 	dac_cw_config_t dac_cw_config;
 
-	dac_cw_config.en_ch = DAC_CHANNEL_2;
+	// do not use this variable in your config
+	// with it, only a half wave is output?
+	/* dac_cw_config.en_ch = DAC_CHANNEL_2; */
 	dac_cw_config.scale = DAC_CW_SCALE_2;
 	dac_cw_config.phase = DAC_CW_PHASE_180;
 	dac_cw_config.freq = 550;

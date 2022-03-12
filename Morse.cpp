@@ -47,8 +47,6 @@ uint8_t			 dac_this_index = 0, dac_next_index = 0;
 uint8_t			 dac_handle_unit, dac_unit_handled, dac_bit;
 uint8_t			 dac_digraph = 0, dac_inited = 0, dac_on = 0;
 
-uint8_t			 dac_cw_configured = 0;
-
 unsigned long		 gpio_tx_start_millis, gpio_tx_current_millis;
 unsigned long		 gpio_handle_unit_millis;
 
@@ -90,18 +88,26 @@ Morse::Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm)
 	case M_DAC:
 		if (!dac_inited) {
 			dac_wpm = the_wpm;
+			dac_unit_t = UNIT_T(dac_wpm);
+			dac_cw_auto_configure(dac_channel);
+			/*
+			 * glad I put a scope on this. why in the world
+			 * don't they have an invert function in the api?
+			 */
 			switch (the_pin) {
 			case 1:
 				dac_channel = DAC_CHANNEL_1;
+				SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG,
+				    SENS_DAC_INV1, 2, SENS_DAC_INV1_S);
 				break;
 			case 2:
 				dac_channel = DAC_CHANNEL_2;
+				SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG,
+				    SENS_DAC_INV2, 2, SENS_DAC_INV2_S);
 				break;
 			default:
 				break;
 			}
-			dac_unit_t = UNIT_T(dac_wpm);
-			dac_cw_auto_configure(dac_channel);
 			dac_output_enable(dac_channel);
 			dac_inited = 1;
 		}
@@ -330,7 +336,6 @@ void
 Morse::dac_cw_configure(dac_cw_config_t *dac_cw_config)
 {
 	dac_cw_generator_config(dac_cw_config);
-	dac_cw_configured = 1;
 }
 
 void
@@ -442,14 +447,13 @@ dac_stop(void)
 void
 dac_cw_auto_configure(dac_channel_t channel)
 {
-	if (!dac_cw_configured) {
-		dac_cw_config_t dac_cw_config;
+	dac_cw_config_t dac_cw_config;
 
-		dac_cw_config.en_ch = channel;
-	 	dac_cw_config.freq = 1000;
+	// this func is broken and only gives 1/2 wave form  
+	/* dac_cw_config.en_ch = channel; */
+	dac_cw_config.freq = 1000;
 
-		dac_cw_generator_config(&dac_cw_config);
-	}
+	dac_cw_generator_config(&dac_cw_config);
 }
 
 void
