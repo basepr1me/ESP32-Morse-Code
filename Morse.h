@@ -45,6 +45,8 @@ Morse
 		void dac_tx_stop(void);
 		void dac_watchdog(void);
 		void dac_cw_configure(dac_cw_config_t *);
+
+		void dac_cw_setup(dac_cw_config_t *);
 };
 
 enum

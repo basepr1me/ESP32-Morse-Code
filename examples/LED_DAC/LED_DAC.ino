@@ -36,7 +36,9 @@ setup(void)
 	dac_cw_config.phase = DAC_CW_PHASE_180;
 	dac_cw_config.freq = 550;
 
-	morse_dac.dac_cw_configure(&dac_cw_config);
+	// this can now be called multiple times if something overwrites
+	// the DAC, like switching between morse and dac_write(voice)
+	morse_dac.dac_cw_setup(&dac_cw_config);
 
 	// setup millis
 	start_gpio_millis = millis();
