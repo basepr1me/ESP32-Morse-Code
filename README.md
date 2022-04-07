@@ -64,4 +64,6 @@ Author
 
 [Tracey Emery](https://github.com/basepr1me/)
 
+If you like this software, consider [donating](https://k7tle.com/?donate=1).
+
 See the [License](LICENSE.md) file for more information.
