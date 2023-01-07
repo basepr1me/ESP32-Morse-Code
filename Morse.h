@@ -36,6 +36,7 @@ Morse
 		uint8_t gpio_transmitting(void);
 
 		void gpio_tx(String tx);
+		void gpio_set_wpm(uint8_t the_wpm);
 		void gpio_tx_stop(void);
 		void gpio_watchdog(void);
 

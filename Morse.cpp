@@ -187,6 +187,13 @@ Morse::gpio_tx(String tx)
 }
 
 void
+Morse::gpio_set_wpm(uint8_t the_wpm) {
+			gpio_wpm = the_wpm;
+			gpio_unit_t = UNIT_T(gpio_wpm);
+			gpio_inited = 1;
+}
+
+void
 gpio_handle_chars(void)
 {
 	gpio_tx_current_millis = millis();
