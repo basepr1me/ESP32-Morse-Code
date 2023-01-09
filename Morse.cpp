@@ -70,7 +70,7 @@ void			 dac_cw_stop(void);
 
 Morse::Morse(uint8_t type, uint8_t the_pin)
 {
-		Morse(type, the_pin, D_WPM);
+	Morse(type, the_pin, D_WPM);
 }
 
 Morse::Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm)
@@ -188,9 +188,9 @@ Morse::gpio_tx(String tx)
 
 void
 Morse::gpio_set_wpm(uint8_t the_wpm) {
-			gpio_wpm = the_wpm;
-			gpio_unit_t = UNIT_T(gpio_wpm);
-			gpio_inited = 1;
+	gpio_wpm = the_wpm;
+	gpio_unit_t = UNIT_T(gpio_wpm);
+	gpio_inited = 1;
 }
 
 void
