@@ -42,9 +42,10 @@ To enable the Morse Code, two watchdogs are available:
 		morse.gpio_watchdog();
 		morse_dac.dac_watchdog();
 
-To set the WPM for GPIO based Morse Code, use ```gpio_set_wpm``` function:
+To set the WPM, two functions are available:
 
-		morse.gpio_set_wpm(new_wpm)
+		morse.gpio_set_wpm(WPM)
+		morse.dac_set_wpm(WPM)
 		
 
 Example

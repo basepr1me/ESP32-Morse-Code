@@ -43,6 +43,7 @@ Morse
 		uint8_t dac_transmitting(void);
 
 		void dac_tx(String tx);
+		void dac_set_wpm(uint8_t the_wpm);
 		void dac_tx_stop(void);
 		void dac_watchdog(void);
 		void dac_cw_configure(dac_cw_config_t *);

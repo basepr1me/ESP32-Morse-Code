@@ -89,7 +89,7 @@ Morse::Morse(uint8_t type, uint8_t the_pin, uint8_t the_wpm)
 			dac_wpm = the_wpm;
 			dac_unit_t = UNIT_T(dac_wpm);
 			dac_cw_config_t dac_cw_config;
-			// this func is broken and only gives 1/2 wave form  
+			// this func is broken and only gives 1/2 wave form
 			/* dac_cw_config.en_ch = channel; */
 			dac_cw_config.freq = 1000;
 
@@ -187,7 +187,8 @@ Morse::gpio_tx(String tx)
 }
 
 void
-Morse::gpio_set_wpm(uint8_t the_wpm) {
+Morse::gpio_set_wpm(uint8_t the_wpm)
+{
 	gpio_wpm = the_wpm;
 	gpio_unit_t = UNIT_T(gpio_wpm);
 	gpio_inited = 1;
@@ -363,6 +364,14 @@ void
 Morse::dac_cw_configure(dac_cw_config_t *dac_cw_config)
 {
 	dac_cw_generator_config(dac_cw_config);
+}
+
+void
+Morse::dac_set_wpm(uint8_t the_wpm)
+{
+	dac_wpm = the_wpm;
+	dac_unit_t = UNIT_T(gpio_wpm);
+	dac_inited = 1;
 }
 
 void
